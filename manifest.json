@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "NeinGag",
+  "name": "9gagEx",
   "version": "1.0",
   "permissions": ["activeTab", "scripting", "storage"],
   "host_permissions": [
