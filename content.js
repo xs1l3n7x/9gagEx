@@ -35,9 +35,9 @@ function deleteArticlesWithForbiddenWords() {
       const titleText = titleLink.textContent.trim().toLowerCase();
       let wordCount = titleText.split(' ').length;
 
-      if (wordCount > 30) {
-        shouldRemove = true;
-      }
+      // if (wordCount > 30) {
+      //   shouldRemove = true;
+      // }
       // Check if the title contains any forbidden words
       const containsForbiddenTitleWord = forbiddenTitleWords.some((word) =>
         titleText.includes(word.toLowerCase())
