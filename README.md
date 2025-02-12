@@ -10,13 +10,14 @@ Copy
 
 chrome://extensions/
 
+
 ## Enable Developer Mode:
 On the Extensions page, toggle the Developer mode switch in the top-right corner to enable it.
 
 ## Load the Unpacked Extension:
 
 - Click the Load unpacked button that appears after enabling Developer mode.
-- A file dialog will open. Navigate to the folder containing your extension files (the one with the manifest.json file).
+- A file dialog will open. Navigate to the folder containing your extension files (the one with the manifest.json "unpacked_extension" folder).
 - Select the folder and click Select Folder (or Open on macOS).
 
 ## Verify the Extension:
