@@ -2,8 +2,8 @@
 let forbiddenTitleWords = [];
 let forbiddenTags = [];
 
-// Load saved data from Chrome's storage
-chrome.storage.sync.get(['forbiddenTitleWords', 'forbiddenTags'], (data) => {
+// Load saved data from Firefox's storage (browser API)
+browser.storage.sync.get(['forbiddenTitleWords', 'forbiddenTags']).then((data) => {
   if (data.forbiddenTitleWords) {
     forbiddenTitleWords = data.forbiddenTitleWords;
   }
@@ -14,7 +14,7 @@ chrome.storage.sync.get(['forbiddenTitleWords', 'forbiddenTags'], (data) => {
 });
 
 // Listen for messages from the popup
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+browser.runtime.onMessage.addListener((message) => {
   if (message.action === 'updateForbiddenLists') {
     forbiddenTitleWords = message.forbiddenTitleWords;
     forbiddenTags = message.forbiddenTags;
@@ -35,9 +35,6 @@ function deleteArticlesWithForbiddenWords() {
       const titleText = titleLink.textContent.trim().toLowerCase();
       let wordCount = titleText.split(' ').length;
 
-      // if (wordCount > 30) {
-      //   shouldRemove = true;
-      // }
       // Check if the title contains any forbidden words
       const containsForbiddenTitleWord = forbiddenTitleWords.some((word) =>
         titleText.includes(word.toLowerCase())
