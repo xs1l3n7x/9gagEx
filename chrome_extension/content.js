@@ -1,7 +1,9 @@
 // content.js
 let forbiddenTitleWords = [];
 let forbiddenTags = [];
-
+let forbiddenAccountAge = 0;
+let forbiddenUsers = new Map();
+let removedPostCount = 0;
 // Load saved data from Chrome's storage
 chrome.storage.sync.get(['forbiddenTitleWords', 'forbiddenTags', 'forbiddenAccountAge'], (data) => {
     if (data.forbiddenTitleWords) {
@@ -33,6 +35,53 @@ function deleteArticlesWithForbiddenWords() {
     articles.forEach((article) => {
         let shouldRemove = false;
 
+        // get OP username
+        const postAuthorElement = article.querySelector('.ui-post-creator__author');
+        let usernameOP = null
+        if (postAuthorElement) {
+            usernameOP = postAuthorElement.textContent.trim()
+            //console.log(usernameOP);
+        }
+
+        // make a request to the OP page to obtain accoutn age
+        chrome.runtime.sendMessage({ action: "fetchData", url: "https://9gag.com/u/" + usernameOP }, (response) => {
+            // i havent been able to parse the data correctly so REGEX
+            const regex = /\\\"username\\\":\\\"(.*?)\\\".*?\\\"creationTs\\\":(\d+)/g;
+            let matches;
+            let results = [];
+            let userMap = new Map(); // Use a Map instead of an array
+
+            const currentTimestamp = Math.floor(Date.now() / 1000); // Current time in seconds
+            // i we got matches on the regex, parse the data
+            while ((matches = regex.exec(response.html)) !== null) {
+                const creationTs = parseInt(matches[2], 10);
+                const accountAgeDays = Math.floor((currentTimestamp - creationTs) / (60 * 60 * 24)); // Convert seconds to days
+                const username = matches[1]
+                // check if user has enough age
+                if (forbiddenAccountAge >= accountAgeDays) {
+                    if (!userMap.has(username)) { // Prevent duplicates
+                        // results.push({
+                        //     username: username,
+                        //     accountAge: accountAgeDays
+                        // });
+                        userMap.set(username, { username, accountAge: accountAgeDays });
+                    }
+
+                    // mark the post for removal
+
+                }
+
+            }
+            forbiddenUsers = new Map([...forbiddenUsers, ...userMap]); // Overwrites duplicates
+            //console.log(Array.from(forbiddenUsers.values()));
+
+        });
+
+        // if the list or map of forbidden users contains the current article author, remove it
+        if (forbiddenUsers.has(usernameOP)){
+            shouldRemove = true;
+            console.log(`${usernameOP} removed due to age ${forbiddenUsers.get(usernameOP).accountAge}`)
+        }
         // Check the article title
         const titleLink = article.querySelector('a[data-evt*="PostTitle"] h2');
         if (titleLink) {
@@ -73,33 +122,11 @@ function deleteArticlesWithForbiddenWords() {
                 title: titleLink ? titleLink.textContent.trim() : 'No Title',
             });
 
-            // get OP username
-            const postAuthorElement = article.querySelector('.ui-post-creator__author');
-            let usernameOP = null
-            if (postAuthorElement) {
-                usernameOP = postAuthorElement.textContent.trim()
-                console.log(usernameOP);
-            }
 
-            chrome.runtime.sendMessage({ action: "fetchData", url: "https://9gag.com/u/" + usernameOP }, (response) => {
-                const regex = /\\\"username\\\":\\\"(.*?)\\\".*?\\\"creationTs\\\":(\d+)/g;
-                let matches;
-                let results = [];
-                const currentTimestamp = Math.floor(Date.now() / 1000); // Current time in seconds
-                while ((matches = regex.exec(response.html)) !== null) {
-                    const creationTs = parseInt(matches[2], 10);
-                    const accountAgeDays = Math.floor((currentTimestamp - creationTs) / (60 * 60 * 24)); // Convert seconds to days
-
-                    results.push({
-                        username: matches[1],
-                        accountAge: accountAgeDays
-                    });
-                }
-                console.log(results);
-
-            });
 
             article.remove();
+            removedPostCount ++;
+            console.log(removedPostCount + ' posts removed');
         }
     });
 
